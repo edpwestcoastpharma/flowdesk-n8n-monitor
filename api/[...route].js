@@ -62,10 +62,32 @@ function csvEscape(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
+function resolveRoute(req, parsedUrl) {
+  const queryRoute = req.query?.route;
+  if (Array.isArray(queryRoute) && queryRoute.length) {
+    return queryRoute.join("/").replace(/^\/+|\/+$/g, "");
+  }
+  if (typeof queryRoute === "string" && queryRoute) {
+    return queryRoute.replace(/^\/+|\/+$/g, "");
+  }
+
+  const urlRoute = parsedUrl.pathname.replace(/^\/api\/?/, "").replace(/^\/+|\/+$/g, "");
+  if (urlRoute && urlRoute !== "[...route]") return urlRoute;
+
+  const pathParts = parsedUrl.pathname.split("/").filter(Boolean);
+  const apiIndex = pathParts.indexOf("api");
+  if (apiIndex >= 0 && pathParts.length > apiIndex + 1) {
+    return pathParts.slice(apiIndex + 1).join("/");
+  }
+
+  return "";
+}
+
 export default async function handler(req, res) {
   const parsedUrl = new URL(req.url, `https://${req.headers.host || "flowdesk.local"}`);
-  const route = parsedUrl.pathname.replace(/^\/api\/?/, "").replace(/\/+$/, "");
+  const route = resolveRoute(req, parsedUrl);
   const searchParams = parsedUrl.searchParams;
+  searchParams.delete("route");
   const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
   try {
@@ -130,7 +152,11 @@ export default async function handler(req, res) {
       return res.send(csv);
     }
 
-    return sendJson(res, 404, { error: "API route not found." });
+    return sendJson(res, 404, {
+      error: "API route not found.",
+      route,
+      path: parsedUrl.pathname
+    });
   } catch (error) {
     return sendJson(res, error.status || 500, {
       error: error.message,
