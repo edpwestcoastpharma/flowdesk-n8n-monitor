@@ -103,7 +103,7 @@ function App() {
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_10%,rgba(0,194,255,.13),transparent_28%),radial-gradient(circle_at_85%_0%,rgba(124,58,237,.16),transparent_28%)]" />
       <div className="relative z-10 flex min-h-screen">
         <Sidebar activeView={activeView} setActiveView={setActiveView} stats={stats} />
-        <main className="min-w-0 flex-1 overflow-x-hidden">
+        <main className="w-full min-w-0 flex-1 overflow-x-hidden">
           <Topbar
             query={query}
             setQuery={setQuery}
@@ -113,7 +113,7 @@ function App() {
             connected={!notice && Boolean(health)}
             lastSync={health?.checkedAt}
           />
-          <div className="mx-auto w-full max-w-[1360px] px-3 py-5 sm:px-5 lg:px-6">
+          <div className="mx-auto w-full max-w-[1280px] px-3 py-5 sm:px-5 lg:px-6 2xl:max-w-[1440px]">
             {notice && <Notice message={notice} />}
             <PageHeader activeView={activeView} connected={!notice && Boolean(health)} />
             {activeView === "Overview" && <Overview stats={stats} activity={activity} workflows={workflows} executions={executions} loading={loading} />}
@@ -132,7 +132,7 @@ function App() {
 
 function Sidebar({ activeView, setActiveView, stats }) {
   return (
-    <aside className="hidden w-[280px] shrink-0 border-r border-slate-200/70 bg-white/65 p-5 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/55 lg:block">
+    <aside className="hidden w-[260px] shrink-0 border-r border-slate-200/70 bg-white/65 p-5 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/55 xl:block">
       <Brand />
       <nav className="mt-8 space-y-1">
         {navItems.map((item) => <NavButton key={item.label} item={item} active={activeView === item.label} onClick={() => setActiveView(item.label)} />)}
@@ -187,7 +187,7 @@ function Topbar({ query, setQuery, theme, setTheme, refresh, connected, lastSync
   return (
     <div className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/75 px-4 py-3 backdrop-blur-2xl dark:border-white/10 dark:bg-[#070B14]/75 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-[1500px] items-center gap-3">
-        <div className="lg:hidden"><Brand /></div>
+      <div className="xl:hidden"><Brand /></div>
         <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search workflows or executions..." className="h-11 w-full rounded-2xl border border-slate-200 bg-white/80 pl-10 pr-4 text-sm outline-none transition focus:border-cyan-400 dark:border-white/10 dark:bg-white/[0.04]" />
@@ -258,7 +258,7 @@ function Overview({ stats, activity, workflows, executions, loading }) {
     <div className="space-y-6">
       <MetricGrid stats={stats} />
       <SystemSummary stats={stats} workflows={workflows} executions={executions} />
-      <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
+      <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,.85fr)]">
         <Panel title="Execution Activity" subtitle="Loaded executions grouped by day" icon={Activity}>
           <ChartArea data={activity} />
         </Panel>
@@ -266,7 +266,7 @@ function Overview({ stats, activity, workflows, executions, loading }) {
           <AttentionList workflows={workflows} executions={executions} loading={loading} />
         </Panel>
       </div>
-      <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
+      <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
         <WorkflowTable workflows={watchlist} executions={executions} loading={loading} compact />
         <ExecutionsList executions={executions.slice(0, 8)} workflows={workflows} loading={loading} />
       </div>
@@ -342,7 +342,7 @@ function ExecutionsPage({ executions, workflows, loading }) {
 function ProblemsPage({ executions, workflows, loading }) {
   const failed = executions.filter((execution) => executionStatus(execution) === "failed");
   return (
-    <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
+    <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
       <ExecutionsTable executions={failed} workflows={workflows} loading={loading} problemOnly />
       <Panel title="Fix Checklist" subtitle="Use this order when automation fails" icon={ShieldCheck}>
         <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
@@ -377,7 +377,7 @@ function ClientsPage({ workflows }) {
 
 function ReportsPage({ stats, workflows, executions }) {
   return (
-    <div className="grid gap-5 xl:grid-cols-[.9fr_1.1fr]">
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
       <Panel title="Executive Summary" subtitle="Current loaded data from n8n" icon={ShieldCheck}>
         <div className="space-y-3">
           <ReportLine label="Total workflows" value={stats.total} />
@@ -432,7 +432,7 @@ function SummaryCard({ title, value, icon: Icon, tone = "cyan" }) {
 
 function Panel({ title, subtitle, icon: Icon, children }) {
   return (
-    <section className="rounded-[26px] border border-slate-200/70 bg-white/75 p-5 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
+    <section className="min-w-0 overflow-hidden rounded-[22px] border border-slate-200/70 bg-white/75 p-4 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045] sm:p-5">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-lg font-semibold"><Icon className="h-5 w-5 text-cyan-400" />{title}</div>
@@ -470,11 +470,11 @@ function ChartArea({ data }) {
 function WorkflowTable({ workflows, executions, loading, compact = false }) {
   return (
     <Panel title={compact ? "Workflow Watchlist" : "All Workflows"} subtitle={compact ? "Lowest health and paused workflows appear first" : "Every workflow with status, latest run, and health score"} icon={Workflow}>
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         {loading && <SkeletonRows />}
         {!loading && workflows.length === 0 && <EmptyState text="No workflows found." />}
         {!loading && workflows.length > 0 && (
-          <div className="hidden grid-cols-[minmax(260px,2fr)_110px_120px_minmax(150px,1fr)_90px] px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 lg:grid">
+          <div className="hidden grid-cols-[minmax(0,2fr)_92px_100px_minmax(130px,1fr)_82px] gap-3 px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 xl:grid">
             <span>Workflow</span>
             <span>Status</span>
             <span>Signal</span>
@@ -489,7 +489,7 @@ function WorkflowTable({ workflows, executions, loading, compact = false }) {
           const score = scoreWorkflow(workflow, runs);
           const signal = getWorkflowSignal(workflow, score, failedCount);
           return (
-            <div key={workflow.id} className="grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 transition hover:bg-cyan-400/[0.08] dark:bg-white/[0.035] lg:grid-cols-[minmax(260px,2fr)_110px_120px_minmax(150px,1fr)_90px] lg:items-center">
+            <div key={workflow.id} className="grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 transition hover:bg-cyan-400/[0.08] dark:bg-white/[0.035] xl:grid-cols-[minmax(0,2fr)_92px_100px_minmax(130px,1fr)_82px] xl:items-center">
               <div className="min-w-0">
                 <div className="break-words font-medium leading-6">{workflow.name}</div>
                 <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -557,7 +557,7 @@ function ExecutionsTable({ executions, workflows, loading, problemOnly = false }
 function ExecutionRow({ execution, workflows, compact = false }) {
   const status = executionStatus(execution);
   return (
-    <div className={`grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 dark:bg-white/[0.035] ${compact ? "" : "lg:grid-cols-[minmax(260px,1.4fr)_120px_minmax(150px,1fr)_100px]"}`}>
+    <div className={`grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 dark:bg-white/[0.035] ${compact ? "" : "xl:grid-cols-[minmax(0,1.4fr)_110px_minmax(130px,1fr)_90px]"}`}>
       <div className="min-w-0">
         <div className="break-words font-medium leading-6">{workflowNameById(workflows, execution.workflowId)}</div>
         <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Execution #{execution.id}</div>

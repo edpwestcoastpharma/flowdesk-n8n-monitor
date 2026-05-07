@@ -21,6 +21,18 @@ body {
   overflow-x: hidden;
 }
 
+button,
+input {
+  max-width: 100%;
+}
+
+section,
+main,
+aside,
+div {
+  min-width: 0;
+}
+
 #root {
   max-width: 100%;
   overflow-x: hidden;
