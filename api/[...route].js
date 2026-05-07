@@ -63,9 +63,9 @@ function csvEscape(value) {
 }
 
 export default async function handler(req, res) {
-  const route = Array.isArray(req.query.route) ? req.query.route.join("/") : "";
-  const searchParams = new URLSearchParams(req.query);
-  searchParams.delete("route");
+  const parsedUrl = new URL(req.url, `https://${req.headers.host || "flowdesk.local"}`);
+  const route = parsedUrl.pathname.replace(/^\/api\/?/, "").replace(/\/+$/, "");
+  const searchParams = parsedUrl.searchParams;
   const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
   try {
