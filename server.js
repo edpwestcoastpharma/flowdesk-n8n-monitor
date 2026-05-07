@@ -1,11 +1,11 @@
-const http = require("http");
-const fs = require("fs");
-const path = require("path");
-const { URL } = require("url");
+import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const PORT = Number(process.env.PORT || 4173);
-const ROOT = __dirname;
-const PUBLIC_DIR = path.join(ROOT, "public");
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = fs.existsSync(path.join(ROOT, "dist")) ? path.join(ROOT, "dist") : path.join(ROOT, "public");
 const CONFIG_PATH = path.join(ROOT, "n8n-config.json");
 const META_PATH = path.join(ROOT, "workflow-meta.json");
 const IS_VERCEL = Boolean(process.env.VERCEL);
