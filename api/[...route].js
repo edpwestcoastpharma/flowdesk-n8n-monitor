@@ -63,7 +63,7 @@ function csvEscape(value) {
 }
 
 function resolveRoute(req, parsedUrl) {
-  const queryRoute = req.query?.route;
+  const queryRoute = req.query?.route || req.query?.["...route"] || req.query?.["[...route]"];
   if (Array.isArray(queryRoute) && queryRoute.length) {
     return queryRoute.join("/").replace(/^\/+|\/+$/g, "");
   }
@@ -88,6 +88,8 @@ export default async function handler(req, res) {
   const route = resolveRoute(req, parsedUrl);
   const searchParams = parsedUrl.searchParams;
   searchParams.delete("route");
+  searchParams.delete("...route");
+  searchParams.delete("[...route]");
   const query = searchParams.toString() ? `?${searchParams.toString()}` : "";
 
   try {
