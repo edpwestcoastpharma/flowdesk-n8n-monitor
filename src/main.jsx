@@ -99,11 +99,11 @@ function App() {
   const activity = useMemo(() => buildActivity(executions), [executions]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950 transition-colors dark:bg-[#070B14] dark:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950 transition-colors dark:bg-[#070B14] dark:text-white">
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_10%,rgba(0,194,255,.13),transparent_28%),radial-gradient(circle_at_85%_0%,rgba(124,58,237,.16),transparent_28%)]" />
       <div className="relative z-10 flex min-h-screen">
         <Sidebar activeView={activeView} setActiveView={setActiveView} stats={stats} />
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 overflow-x-hidden">
           <Topbar
             query={query}
             setQuery={setQuery}
@@ -113,7 +113,7 @@ function App() {
             connected={!notice && Boolean(health)}
             lastSync={health?.checkedAt}
           />
-          <div className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1360px] px-3 py-5 sm:px-5 lg:px-6">
             {notice && <Notice message={notice} />}
             <PageHeader activeView={activeView} connected={!notice && Boolean(health)} />
             {activeView === "Overview" && <Overview stats={stats} activity={activity} workflows={workflows} executions={executions} loading={loading} />}
@@ -251,9 +251,13 @@ function PageHeader({ activeView, connected }) {
 }
 
 function Overview({ stats, activity, workflows, executions, loading }) {
+  const watchlist = [...workflows]
+    .sort((a, b) => scoreWorkflow(a, executions.filter((execution) => String(execution.workflowId) === String(a.id))) - scoreWorkflow(b, executions.filter((execution) => String(execution.workflowId) === String(b.id))))
+    .slice(0, 8);
   return (
     <div className="space-y-6">
       <MetricGrid stats={stats} />
+      <SystemSummary stats={stats} workflows={workflows} executions={executions} />
       <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
         <Panel title="Execution Activity" subtitle="Loaded executions grouped by day" icon={Activity}>
           <ChartArea data={activity} />
@@ -263,9 +267,42 @@ function Overview({ stats, activity, workflows, executions, loading }) {
         </Panel>
       </div>
       <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
-        <WorkflowTable workflows={workflows.slice(0, 8)} executions={executions} loading={loading} compact />
+        <WorkflowTable workflows={watchlist} executions={executions} loading={loading} compact />
         <ExecutionsList executions={executions.slice(0, 8)} workflows={workflows} loading={loading} />
       </div>
+    </div>
+  );
+}
+
+function SystemSummary({ stats, workflows, executions }) {
+  const paused = workflows.filter((workflow) => !workflow.active).length;
+  const failed = executions.filter((execution) => executionStatus(execution) === "failed").length;
+  const message = failed
+    ? `${failed} failed execution${failed === 1 ? "" : "s"} need review.`
+    : paused
+      ? `${paused} workflow${paused === 1 ? "" : "s"} are paused. Check if intentional.`
+      : "No failed executions in loaded data. Keep monitoring active.";
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <InsightCard title="Current Signal" value={message} tone={failed ? "red" : paused ? "amber" : "green"} />
+      <InsightCard title="What To Watch" value="Review low health scores first. Paused workflows are not bad if they are intentionally disabled." tone="cyan" />
+      <InsightCard title="How To Use This Page" value="Overview gives summary. Workflows shows all flows. Executions shows completed, running, and failed runs." tone="violet" />
+    </div>
+  );
+}
+
+function InsightCard({ title, value, tone }) {
+  const tones = {
+    red: "border-rose-400/25 bg-rose-500/10 text-rose-400",
+    amber: "border-amber-400/25 bg-amber-500/10 text-amber-400",
+    green: "border-emerald-400/25 bg-emerald-500/10 text-emerald-400",
+    cyan: "border-cyan-400/25 bg-cyan-400/10 text-cyan-300",
+    violet: "border-violet-400/25 bg-violet-500/10 text-violet-300"
+  };
+  return (
+    <div className={`rounded-3xl border p-4 ${tones[tone]}`}>
+      <div className="text-sm font-semibold">{title}</div>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{value}</p>
     </div>
   );
 }
@@ -432,30 +469,65 @@ function ChartArea({ data }) {
 
 function WorkflowTable({ workflows, executions, loading, compact = false }) {
   return (
-    <Panel title={compact ? "Priority Workflows" : "All Workflows"} subtitle="Status, last execution, and health score" icon={Workflow}>
+    <Panel title={compact ? "Workflow Watchlist" : "All Workflows"} subtitle={compact ? "Lowest health and paused workflows appear first" : "Every workflow with status, latest run, and health score"} icon={Workflow}>
       <div className="space-y-2">
         {loading && <SkeletonRows />}
         {!loading && workflows.length === 0 && <EmptyState text="No workflows found." />}
+        {!loading && workflows.length > 0 && (
+          <div className="hidden grid-cols-[minmax(260px,2fr)_110px_120px_minmax(150px,1fr)_90px] px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 lg:grid">
+            <span>Workflow</span>
+            <span>Status</span>
+            <span>Signal</span>
+            <span>Latest Run</span>
+            <span>Health</span>
+          </div>
+        )}
         {!loading && workflows.map((workflow) => {
           const runs = executions.filter((execution) => String(execution.workflowId) === String(workflow.id));
           const last = runs[0];
-          const failed = runs.some((execution) => executionStatus(execution) === "failed");
+          const failedCount = runs.filter((execution) => executionStatus(execution) === "failed").length;
           const score = scoreWorkflow(workflow, runs);
+          const signal = getWorkflowSignal(workflow, score, failedCount);
           return (
-            <div key={workflow.id} className="grid items-center gap-3 rounded-3xl bg-slate-900/[0.025] px-4 py-3 transition hover:bg-cyan-400/[0.08] dark:bg-white/[0.035] lg:grid-cols-[1.5fr_110px_120px_160px_80px]">
+            <div key={workflow.id} className="grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 transition hover:bg-cyan-400/[0.08] dark:bg-white/[0.035] lg:grid-cols-[minmax(260px,2fr)_110px_120px_minmax(150px,1fr)_90px] lg:items-center">
               <div className="min-w-0">
-                <div className="truncate font-medium">{workflow.name}</div>
-                <div className="truncate text-xs text-slate-500 dark:text-slate-400">ID {workflow.id}</div>
+                <div className="break-words font-medium leading-6">{workflow.name}</div>
+                <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <span>ID {workflow.id}</span>
+                  <span>{runs.length} loaded run{runs.length === 1 ? "" : "s"}</span>
+                  {failedCount > 0 && <span>{failedCount} failed</span>}
+                </div>
               </div>
-              <Pill tone={workflow.active ? "green" : "slate"}>{workflow.active ? "Active" : "Paused"}</Pill>
-              <Pill tone={failed ? "red" : "green"}>{failed ? "Problem" : "Healthy"}</Pill>
-              <div className="text-sm text-slate-500 dark:text-slate-400">{last ? formatDate(last.startedAt || last.createdAt) : "No loaded run"}</div>
-              <div className="text-sm font-semibold text-cyan-500">{score}%</div>
+              <Field label="Status"><Pill tone={workflow.active ? "green" : "slate"}>{workflow.active ? "Active" : "Paused"}</Pill></Field>
+              <Field label="Signal"><Pill tone={signal.tone}>{signal.label}</Pill></Field>
+              <Field label="Latest Run"><div className="text-sm text-slate-500 dark:text-slate-400">{last ? formatDate(last.startedAt || last.createdAt) : "No execution loaded"}</div></Field>
+              <Field label="Health"><HealthScore score={score} /></Field>
             </div>
           );
         })}
       </div>
     </Panel>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-500 lg:hidden">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function HealthScore({ score }) {
+  const tone = score >= 85 ? "bg-emerald-400" : score >= 70 ? "bg-amber-400" : "bg-rose-400";
+  return (
+    <div className="min-w-[76px]">
+      <div className="text-sm font-semibold">{score}%</div>
+      <div className="mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-white/10">
+        <div className={`h-full rounded-full ${tone}`} style={{ width: `${score}%` }} />
+      </div>
+    </div>
   );
 }
 
@@ -485,14 +557,15 @@ function ExecutionsTable({ executions, workflows, loading, problemOnly = false }
 function ExecutionRow({ execution, workflows, compact = false }) {
   const status = executionStatus(execution);
   return (
-    <div className={`grid items-center gap-3 rounded-3xl bg-slate-900/[0.025] px-4 py-3 dark:bg-white/[0.035] ${compact ? "" : "lg:grid-cols-[1.3fr_120px_150px_100px]"}`}>
+    <div className={`grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 dark:bg-white/[0.035] ${compact ? "" : "lg:grid-cols-[minmax(260px,1.4fr)_120px_minmax(150px,1fr)_100px]"}`}>
       <div className="min-w-0">
-        <div className="truncate font-medium">{workflowNameById(workflows, execution.workflowId)}</div>
-        <div className="truncate text-xs text-slate-500 dark:text-slate-400">Execution #{execution.id}</div>
+        <div className="break-words font-medium leading-6">{workflowNameById(workflows, execution.workflowId)}</div>
+        <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Execution #{execution.id}</div>
       </div>
-      <Pill tone={status === "failed" ? "red" : status === "success" ? "green" : "cyan"}>{status}</Pill>
-      {!compact && <div className="text-sm text-slate-500 dark:text-slate-400">{formatDate(execution.startedAt || execution.createdAt)}</div>}
-      {!compact && <div className="text-sm text-slate-500 dark:text-slate-400">{duration(execution)}</div>}
+      <Field label="Result"><Pill tone={status === "failed" ? "red" : status === "success" ? "green" : "cyan"}>{status}</Pill></Field>
+      {!compact && <Field label="Started"><div className="text-sm text-slate-500 dark:text-slate-400">{formatDate(execution.startedAt || execution.createdAt)}</div></Field>}
+      {!compact && <Field label="Duration"><div className="text-sm text-slate-500 dark:text-slate-400">{duration(execution)}</div></Field>}
+      {compact && execution.error?.message && <div className="text-sm text-rose-400">{execution.error.message}</div>}
     </div>
   );
 }
@@ -541,6 +614,7 @@ function Pill({ tone, children }) {
     green: "bg-emerald-500/10 text-emerald-500",
     red: "bg-rose-500/10 text-rose-500",
     cyan: "bg-cyan-400/10 text-cyan-500",
+    amber: "bg-amber-400/10 text-amber-500",
     slate: "bg-slate-500/10 text-slate-500"
   };
   return <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-semibold ${tones[tone] || tones.slate}`}>{children}</span>;
@@ -600,6 +674,13 @@ function scoreWorkflow(workflow, runs) {
   score -= Math.min(45, failed * 15);
   if (!runs.length) score -= 5;
   return Math.max(0, Math.min(100, score));
+}
+
+function getWorkflowSignal(workflow, score, failedCount) {
+  if (failedCount > 0) return { label: "Failed", tone: "red" };
+  if (!workflow.active) return { label: "Paused", tone: "slate" };
+  if (score < 75) return { label: "Watch", tone: "amber" };
+  return { label: "Healthy", tone: "green" };
 }
 
 function workflowNameById(workflows, id) {

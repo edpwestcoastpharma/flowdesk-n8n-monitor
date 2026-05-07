@@ -10,11 +10,24 @@
 
 html {
   scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.recharts-wrapper {
+  max-width: 100% !important;
 }
 
 .gradient-text {
