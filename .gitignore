@@ -1,0 +1,6 @@
+n8n-config.json
+workflow-meta.json
+server.out.log
+server.err.log
+node_modules/
+.vercel/

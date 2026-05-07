@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>n8n Command Center</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">n8n</div>
+          <div>
+            <strong>FlowDesk</strong>
+            <span>n8n monitoring made simple</span>
+          </div>
+        </div>
+        <nav aria-label="Dashboard views">
+          <button class="nav-item active" data-view="overview"><span>01</span> Home</button>
+          <button class="nav-item" data-view="workflows"><span>02</span> Workflows</button>
+          <button class="nav-item" data-view="failures"><span>03</span> Problems</button>
+          <button class="nav-item" data-view="clients"><span>04</span> Clients</button>
+          <button class="nav-item" data-view="reports"><span>05</span> Reports</button>
+          <button class="nav-item" data-view="settings"><span>06</span> Connect</button>
+        </nav>
+        <div class="side-note">
+          <strong>Simple rule</strong>
+          <p>Green is healthy, yellow needs watch, red needs action.</p>
+        </div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Live n8n monitor</p>
+            <h1>FlowDesk</h1>
+            <p class="subtitle">See what is running, what failed, and what needs your attention.</p>
+          </div>
+          <div class="actions">
+            <button id="themeToggle" class="secondary" type="button" title="Switch day or night mode">Night</button>
+            <label class="toggle">
+              <input id="autoRefresh" type="checkbox" checked>
+              Auto
+            </label>
+            <button id="refreshBtn" title="Refresh data">Refresh</button>
+            <span id="connectionPill" class="pill neutral">Checking</span>
+          </div>
+        </header>
+
+        <section id="notice" class="notice hidden"></section>
+
+        <section class="view active" id="overview">
+          <div class="metric-grid">
+            <article class="metric"><span>Total flows</span><strong id="totalWorkflows">0</strong><small>All workflows from n8n</small></article>
+            <article class="metric good-card"><span>Running</span><strong id="activeWorkflows">0</strong><small>Active workflows</small></article>
+            <article class="metric bad-card"><span>Problems</span><strong id="failedExecutions">0</strong><small>Failed loaded runs</small></article>
+            <article class="metric"><span>Health</span><strong id="avgHealth">0%</strong><small>Average workflow score</small></article>
+          </div>
+
+          <section class="quick-guide">
+            <div><strong>1. Watch</strong><span>Dashboard refreshes automatically.</span></div>
+            <div><strong>2. Fix</strong><span>Open Problems when a flow fails.</span></div>
+            <div><strong>3. Document</strong><span>Add client and project notes.</span></div>
+          </section>
+
+          <div class="status-strip">
+            <div><span>n8n URL</span><strong id="baseUrlText">-</strong></div>
+            <div><span>Latency</span><strong id="latencyText">-</strong></div>
+            <div><span>Last refresh</span><strong id="lastRefreshText">-</strong></div>
+            <div><span>Loaded runs</span><strong id="loadedExecutions">0</strong></div>
+          </div>
+
+          <div class="split">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Workflow Health</h2>
+                <span>Lowest score appears first</span>
+              </div>
+              <div id="healthList" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Action Needed</h2>
+                <span>Fix these first</span>
+              </div>
+              <div id="attentionList" class="list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="workflows">
+          <section class="panel">
+            <div class="panel-heading wrap">
+              <h2>Workflow List</h2>
+              <div class="filters">
+                <input id="workflowSearch" type="search" placeholder="Search workflow, client, category">
+                <select id="statusFilter">
+                  <option value="all">All status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="failed">Recently failed</option>
+                </select>
+                <select id="priorityFilter">
+                  <option value="all">All priority</option>
+                  <option value="high">High</option>
+                  <option value="normal">Normal</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+            </div>
+            <div id="workflowTable" class="table"></div>
+          </section>
+        </section>
+
+        <section class="view" id="failures">
+          <div class="split">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Problems</h2>
+                <span>Click one item to understand it</span>
+              </div>
+              <div id="failureList" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Problem Detail</h2>
+                <span id="selectedFailureTitle">None selected</span>
+              </div>
+              <div id="failureDetail" class="detail"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="clients">
+          <div class="split">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Clients</h2>
+                <span>Group workflows by business</span>
+              </div>
+              <div id="clientList" class="list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Workflow Notes</h2>
+                <span id="metaWorkflowTitle">Select a workflow</span>
+              </div>
+              <form id="metaForm">
+                <input id="metaWorkflowId" type="hidden">
+                <label>Client <input id="metaClient" placeholder="Client name"></label>
+                <label>Project <input id="metaProject" placeholder="Project or business process"></label>
+                <label>Category <input id="metaCategory" placeholder="Lead gen, CRM, WhatsApp, AI agent"></label>
+                <label>Priority
+                  <select id="metaPriority">
+                    <option value="high">High</option>
+                    <option value="normal">Normal</option>
+                    <option value="low">Low</option>
+                  </select>
+                </label>
+                <label>Monthly Value <input id="metaValue" placeholder="Example: 10000"></label>
+                <label>Owner <input id="metaOwner" placeholder="Engineer or team"></label>
+                <label>Notes <textarea id="metaNotes" placeholder="SOP, risk, maintenance notes"></textarea></label>
+                <button type="submit">Save Metadata</button>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="reports">
+          <div class="split">
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Simple Report</h2>
+                <span>Ready for client or internal review</span>
+              </div>
+              <div id="reportSummary" class="report"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-heading">
+                <h2>Download</h2>
+                <span>Use this for Excel or records</span>
+              </div>
+              <div class="button-stack">
+                <a class="button-link" href="/api/export/workflows.csv">Export workflows CSV</a>
+                <button id="copyReportBtn" class="secondary" type="button">Copy report summary</button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="settings">
+          <section class="panel settings-panel">
+            <div class="panel-heading">
+              <h2>Connect n8n</h2>
+              <span>Use base URL only, without /home/workflows</span>
+            </div>
+            <form id="configForm">
+              <label>n8n Base URL <input id="baseUrl" name="baseUrl" type="url" placeholder="https://your-ngrok-url.ngrok-free.dev"></label>
+              <label>n8n API Key <input id="apiKey" name="apiKey" type="password" placeholder="Leave blank to keep current key"></label>
+              <div class="form-actions">
+                <button type="submit">Save Connection</button>
+                <button type="button" id="testBtn" class="secondary">Test</button>
+              </div>
+            </form>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
