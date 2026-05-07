@@ -8,6 +8,7 @@ const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
 const CONFIG_PATH = path.join(ROOT, "n8n-config.json");
 const META_PATH = path.join(ROOT, "workflow-meta.json");
+const IS_VERCEL = Boolean(process.env.VERCEL);
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -19,16 +20,17 @@ const contentTypes = {
 
 function readConfig() {
   const envConfig = {
-    baseUrl: process.env.N8N_BASE_URL || "",
+    baseUrl: cleanBaseUrl(process.env.N8N_BASE_URL || ""),
     apiKey: process.env.N8N_API_KEY || ""
   };
 
+  if (IS_VERCEL) return envConfig;
   if (!fs.existsSync(CONFIG_PATH)) return envConfig;
 
   try {
     const saved = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
     return {
-      baseUrl: envConfig.baseUrl || saved.baseUrl || "",
+      baseUrl: envConfig.baseUrl || cleanBaseUrl(saved.baseUrl || ""),
       apiKey: envConfig.apiKey || saved.apiKey || ""
     };
   } catch {
@@ -39,14 +41,27 @@ function readConfig() {
 function writeConfig(nextConfig) {
   const current = readConfig();
   const clean = {
-    baseUrl: String(nextConfig.baseUrl || "").replace(/\/+$/, ""),
+    baseUrl: cleanBaseUrl(nextConfig.baseUrl || current.baseUrl || ""),
     apiKey: String(nextConfig.apiKey || current.apiKey || "")
   };
+  if (IS_VERCEL) return clean;
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(clean, null, 2));
   return clean;
 }
 
+function cleanBaseUrl(value) {
+  const input = String(value || "").trim();
+  if (!input) return "";
+  try {
+    const parsed = new URL(input);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return input.replace(/\/(home|workflow|workflows|api).*$/i, "").replace(/\/+$/, "");
+  }
+}
+
 function readMeta() {
+  if (IS_VERCEL) return { workflows: {}, issues: {} };
   if (!fs.existsSync(META_PATH)) return { workflows: {}, issues: {} };
   try {
     const saved = JSON.parse(fs.readFileSync(META_PATH, "utf8"));
@@ -64,6 +79,7 @@ function writeMeta(nextMeta) {
     workflows: nextMeta.workflows || {},
     issues: nextMeta.issues || {}
   };
+  if (IS_VERCEL) return clean;
   fs.writeFileSync(META_PATH, JSON.stringify(clean, null, 2));
   return clean;
 }

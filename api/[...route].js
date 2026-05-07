@@ -1,7 +1,18 @@
 const config = {
-  baseUrl: (process.env.N8N_BASE_URL || "").replace(/\/+$/, ""),
+  baseUrl: cleanBaseUrl(process.env.N8N_BASE_URL || ""),
   apiKey: process.env.N8N_API_KEY || ""
 };
+
+function cleanBaseUrl(value) {
+  const input = String(value || "").trim();
+  if (!input) return "";
+  try {
+    const parsed = new URL(input);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return input.replace(/\/(home|workflow|workflows|api).*$/i, "").replace(/\/+$/, "");
+  }
+}
 
 function maskKey(apiKey) {
   if (!apiKey) return "";

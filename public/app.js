@@ -57,6 +57,17 @@ function applyTheme(theme) {
   els.themeToggle.title = theme === "night" ? "Switch to day mode" : "Switch to night mode";
 }
 
+function cleanBaseUrl(value) {
+  const input = String(value || "").trim();
+  if (!input) return "";
+  try {
+    const parsed = new URL(input);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return input.replace(/\/(home|workflow|workflows|api).*$/i, "").replace(/\/+$/, "");
+  }
+}
+
 function safe(value) {
   return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",
@@ -491,7 +502,7 @@ els.configForm.addEventListener("submit", async event => {
   try {
     await api("/api/config", {
       method: "POST",
-      body: JSON.stringify({ baseUrl: els.baseUrl.value, apiKey: els.apiKey.value })
+      body: JSON.stringify({ baseUrl: cleanBaseUrl(els.baseUrl.value), apiKey: els.apiKey.value })
     });
     els.apiKey.value = "";
     await loadConfig();
