@@ -103,11 +103,11 @@ function App() {
   const activity = useMemo(() => buildActivity(executions), [executions]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50 text-slate-950 transition-colors dark:bg-[#070B14] dark:text-white">
+    <div className="app-root bg-slate-50 text-slate-950 transition-colors dark:bg-[#070B14] dark:text-white">
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_10%,rgba(0,194,255,.13),transparent_28%),radial-gradient(circle_at_85%_0%,rgba(124,58,237,.16),transparent_28%)]" />
-      <div className="relative z-10 flex min-h-screen">
+      <div className="app-shell relative z-10">
         <Sidebar activeView={activeView} setActiveView={setActiveView} stats={stats} />
-        <main className="w-full min-w-0 flex-1 overflow-x-hidden">
+        <main className="app-main">
           <Topbar
             query={query}
             setQuery={setQuery}
@@ -117,7 +117,7 @@ function App() {
             connected={!notice && Boolean(health)}
             lastSync={health?.checkedAt}
           />
-          <div className="mx-auto w-full max-w-[1280px] px-3 py-5 sm:px-5 lg:px-6 2xl:max-w-[1440px]">
+          <div className="app-container">
             {notice && <Notice message={notice} />}
             <PageHeader activeView={activeView} connected={!notice && Boolean(health)} />
             {activeView === "Overview" && <Overview stats={stats} activity={activity} workflows={workflows} executions={executions} loading={loading} baseUrl={config?.baseUrl} />}
@@ -136,7 +136,7 @@ function App() {
 
 function Sidebar({ activeView, setActiveView, stats }) {
   return (
-    <aside className="hidden w-[260px] shrink-0 border-r border-slate-200/70 bg-white/65 p-5 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/55 xl:block">
+    <aside className="app-sidebar border-r border-slate-200/70 bg-white/65 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/55">
       <Brand />
       <nav className="mt-8 space-y-1">
         {navItems.map((item) => <NavButton key={item.label} item={item} active={activeView === item.label} onClick={() => setActiveView(item.label)} />)}
@@ -189,10 +189,10 @@ function SidebarStat({ label, value }) {
 
 function Topbar({ query, setQuery, theme, setTheme, refresh, connected, lastSync }) {
   return (
-    <div className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/75 px-4 py-3 backdrop-blur-2xl dark:border-white/10 dark:bg-[#070B14]/75 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-[1500px] flex-wrap items-center gap-3">
+    <div className="app-topbar border-b border-slate-200/70 bg-white/75 backdrop-blur-2xl dark:border-white/10 dark:bg-[#070B14]/75">
+      <div className="app-topbar-inner">
       <div className="xl:hidden"><Brand /></div>
-        <div className="relative min-w-[220px] flex-1 basis-[360px]">
+        <div className="topbar-search relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search workflows or executions..." className="h-11 w-full rounded-2xl border border-slate-200 bg-white/80 pl-10 pr-4 text-sm outline-none transition focus:border-cyan-400 dark:border-white/10 dark:bg-white/[0.04]" />
         </div>
@@ -262,7 +262,7 @@ function Overview({ stats, activity, workflows, executions, loading, baseUrl }) 
     <div className="space-y-6">
       <MetricGrid stats={stats} />
       <SystemSummary stats={stats} workflows={workflows} executions={executions} />
-      <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,.85fr)]">
+      <div className="dashboard-split">
         <Panel title="Execution Activity" subtitle="Loaded executions grouped by day" icon={Activity}>
           <ChartArea data={activity} />
         </Panel>
@@ -270,7 +270,7 @@ function Overview({ stats, activity, workflows, executions, loading, baseUrl }) 
           <AttentionList workflows={workflows} executions={executions} loading={loading} />
         </Panel>
       </div>
-      <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
+      <div className="dashboard-split dashboard-split-narrow">
         <WorkflowTable workflows={watchlist} executions={executions} loading={loading} compact baseUrl={baseUrl} />
         <ExecutionsList executions={executions.slice(0, 8)} workflows={workflows} loading={loading} baseUrl={baseUrl} />
       </div>
@@ -287,7 +287,7 @@ function SystemSummary({ stats, workflows, executions }) {
       ? `${paused} workflow${paused === 1 ? "" : "s"} are paused. Check if intentional.`
       : "No failed executions in loaded data. Keep monitoring active.";
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
+    <div className="auto-grid">
       <InsightCard title="Current Signal" value={message} tone={failed ? "red" : paused ? "amber" : "green"} />
       <InsightCard title="What To Watch" value="Review low health scores first. Paused workflows are not bad if they are intentionally disabled." tone="cyan" />
       <InsightCard title="How To Use This Page" value="Overview gives summary. Workflows shows all flows. Executions shows completed, running, and failed runs." tone="violet" />
@@ -316,7 +316,7 @@ function WorkflowsPage({ workflows, executions, loading, baseUrl }) {
   const paused = workflows.filter((workflow) => !workflow.active);
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="auto-grid">
         <SummaryCard title="Active Workflows" value={active.length} icon={Zap} tone="green" />
         <SummaryCard title="Paused Workflows" value={paused.length} icon={Clock3} tone="slate" />
         <SummaryCard title="Total Workflows" value={workflows.length} icon={Workflow} tone="cyan" />
@@ -332,7 +332,7 @@ function ExecutionsPage({ executions, workflows, loading, baseUrl }) {
   const failed = executions.filter((execution) => executionStatus(execution) === "failed");
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="auto-grid">
         <SummaryCard title="Running Now" value={running.length} icon={Activity} tone="cyan" />
         <SummaryCard title="Completed" value={completed.length} icon={CheckCircle2} tone="green" />
         <SummaryCard title="Failed" value={failed.length} icon={XCircle} tone="red" />
@@ -346,7 +346,7 @@ function ExecutionsPage({ executions, workflows, loading, baseUrl }) {
 function ProblemsPage({ executions, workflows, loading, baseUrl }) {
   const failed = executions.filter((execution) => executionStatus(execution) === "failed");
   return (
-    <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(340px,420px)]">
+    <div className="dashboard-split dashboard-split-narrow">
       <ExecutionsTable executions={failed} workflows={workflows} loading={loading} problemOnly baseUrl={baseUrl} />
       <Panel title="Fix Checklist" subtitle="Use this order when automation fails" icon={ShieldCheck}>
         <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
@@ -362,7 +362,7 @@ function ProblemsPage({ executions, workflows, loading, baseUrl }) {
 function ClientsPage({ workflows }) {
   const groups = groupClients(workflows);
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="auto-grid">
       {groups.map((group) => (
         <Panel key={group.name} title={group.name} subtitle={`${group.workflows.length} workflows`} icon={Users}>
           <div className="space-y-2">
@@ -381,7 +381,7 @@ function ClientsPage({ workflows }) {
 
 function ReportsPage({ stats, workflows, executions }) {
   return (
-    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+    <div className="dashboard-split">
       <Panel title="Executive Summary" subtitle="Current loaded data from n8n" icon={ShieldCheck}>
         <div className="space-y-3">
           <ReportLine label="Total workflows" value={stats.total} />
@@ -406,7 +406,7 @@ function ReportsPage({ stats, workflows, executions }) {
 
 function MetricGrid({ stats }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+    <div className="metric-grid">
       <SummaryCard title="Total Workflows" value={stats.total} icon={Workflow} tone="cyan" />
       <SummaryCard title="Active" value={stats.active} icon={Zap} tone="green" />
       <SummaryCard title="Running Exec." value={stats.runningExecutions} icon={Activity} tone="cyan" />
@@ -426,17 +426,17 @@ function SummaryCard({ title, value, icon: Icon, tone = "cyan" }) {
     slate: "text-slate-500 bg-slate-400/10"
   };
   return (
-    <motion.div whileHover={{ y: -3 }} className="rounded-[24px] border border-slate-200/70 bg-white/75 p-5 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
+    <motion.div whileHover={{ y: -3 }} className="fluid-card border border-slate-200/70 bg-white/75 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
       <div className={`grid h-11 w-11 place-items-center rounded-2xl ${tones[tone]}`}><Icon className="h-5 w-5" /></div>
       <div className="mt-5 text-sm text-slate-500 dark:text-slate-400">{title}</div>
-      <div className="mt-1 text-3xl font-semibold tracking-tight">{value}</div>
+      <div className="metric-value mt-1 font-semibold tracking-tight">{value}</div>
     </motion.div>
   );
 }
 
 function Panel({ title, subtitle, icon: Icon, children }) {
   return (
-    <section className="min-w-0 overflow-hidden rounded-[22px] border border-slate-200/70 bg-white/75 p-4 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045] sm:p-5">
+    <section className="fluid-panel border border-slate-200/70 bg-white/75 shadow-premium backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.045]">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-lg font-semibold"><Icon className="h-5 w-5 text-cyan-400" />{title}</div>
@@ -450,7 +450,7 @@ function Panel({ title, subtitle, icon: Icon, children }) {
 
 function ChartArea({ data }) {
   return (
-    <div className="h-[300px]">
+    <div className="chart-box">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data}>
           <defs>
@@ -474,11 +474,11 @@ function ChartArea({ data }) {
 function WorkflowTable({ workflows, executions, loading, compact = false, baseUrl }) {
   return (
     <Panel title={compact ? "Workflow Watchlist" : "All Workflows"} subtitle={compact ? "Lowest health and paused workflows appear first" : "Every workflow with status, latest run, and health score"} icon={Workflow}>
-      <div className="min-w-0 space-y-2">
+      <div className="responsive-table space-y-2">
         {loading && <SkeletonRows />}
         {!loading && workflows.length === 0 && <EmptyState text="No workflows found." />}
         {!loading && workflows.length > 0 && (
-          <div className="hidden grid-cols-[minmax(0,2fr)_92px_100px_minmax(130px,1fr)_82px_86px] gap-3 px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 xl:grid">
+          <div className="workflow-header text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             <span>Workflow</span>
             <span>Status</span>
             <span>Signal</span>
@@ -494,7 +494,7 @@ function WorkflowTable({ workflows, executions, loading, compact = false, baseUr
           const score = scoreWorkflow(workflow, runs);
           const signal = getWorkflowSignal(workflow, score, failedCount);
           return (
-            <div key={workflow.id} className="grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 transition hover:bg-cyan-400/[0.08] dark:bg-white/[0.035] xl:grid-cols-[minmax(0,2fr)_92px_100px_minmax(130px,1fr)_82px_86px] xl:items-center">
+            <div key={workflow.id} className="workflow-row bg-slate-900/[0.025] transition hover:bg-cyan-400/[0.08] dark:bg-white/[0.035]">
               <div className="min-w-0">
                 <div className="break-words font-medium leading-6">{workflow.name}</div>
                 <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -540,7 +540,7 @@ function HealthScore({ score }) {
 function ExecutionsList({ executions, workflows, loading, baseUrl }) {
   return (
     <Panel title="Recent Executions" subtitle="Latest loaded n8n runs" icon={Activity}>
-      <div className="space-y-2">
+      <div className="responsive-table space-y-2">
         {loading && <SkeletonRows small />}
         {!loading && executions.map((execution) => <ExecutionRow key={execution.id} execution={execution} workflows={workflows} compact baseUrl={baseUrl} />)}
       </div>
@@ -551,7 +551,7 @@ function ExecutionsList({ executions, workflows, loading, baseUrl }) {
 function ExecutionsTable({ executions, workflows, loading, problemOnly = false, baseUrl }) {
   return (
     <Panel title={problemOnly ? "Failed Executions" : "All Executions"} subtitle="Running, completed, and failed runs" icon={Activity}>
-      <div className="space-y-2">
+      <div className="responsive-table space-y-2">
         {loading && <SkeletonRows />}
         {!loading && executions.length === 0 && <EmptyState text={problemOnly ? "No failed executions in loaded data." : "No executions found."} />}
         {!loading && executions.map((execution) => <ExecutionRow key={execution.id} execution={execution} workflows={workflows} baseUrl={baseUrl} />)}
@@ -563,7 +563,7 @@ function ExecutionsTable({ executions, workflows, loading, problemOnly = false, 
 function ExecutionRow({ execution, workflows, compact = false, baseUrl }) {
   const status = executionStatus(execution);
   return (
-    <div className={`grid min-w-0 items-start gap-3 rounded-2xl bg-slate-900/[0.025] px-4 py-4 dark:bg-white/[0.035] ${compact ? "" : "xl:grid-cols-[minmax(0,1.4fr)_110px_minmax(130px,1fr)_90px_86px]"}`}>
+    <div className={`${compact ? "execution-row compact" : "execution-row"} bg-slate-900/[0.025] dark:bg-white/[0.035]`}>
       <div className="min-w-0">
         <div className="break-words font-medium leading-6">{workflowNameById(workflows, execution.workflowId)}</div>
         <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">Execution #{execution.id}</div>

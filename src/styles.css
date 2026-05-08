@@ -22,6 +22,195 @@ body {
   overflow-x: hidden;
 }
 
+#root {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.app-root {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.app-sidebar {
+  display: none;
+  width: clamp(13.5rem, 15vw, 16.25rem);
+  min-width: 0;
+  padding: clamp(0.875rem, 1.3vw, 1.25rem);
+}
+
+.app-main {
+  width: 100%;
+  min-width: 0;
+  max-width: 100vw;
+  overflow-x: clip;
+}
+
+.app-container {
+  width: 100%;
+  max-width: min(100%, 90rem);
+  margin-inline: auto;
+  padding: clamp(0.75rem, 1.4vw, 1.5rem);
+  padding-bottom: clamp(5.25rem, 8vw, 2rem);
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  width: 100%;
+  padding: clamp(0.625rem, 1vw, 0.875rem) clamp(0.75rem, 1.6vw, 1.5rem);
+}
+
+.app-topbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+}
+
+.topbar-search {
+  flex: 1 1 18rem;
+  min-width: min(100%, 14rem);
+}
+
+.auto-grid,
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15.5rem), 1fr));
+  gap: clamp(0.75rem, 1.2vw, 1rem);
+}
+
+.dashboard-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(0.875rem, 1.6vw, 1.25rem);
+  min-width: 0;
+}
+
+.fluid-card,
+.fluid-panel {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: clamp(1rem, 1.5vw, 1.625rem);
+  padding: clamp(0.875rem, 1.3vw, 1.25rem);
+}
+
+.metric-value {
+  font-size: clamp(1.55rem, 2vw, 1.875rem);
+  line-height: 1.1;
+}
+
+.chart-box {
+  width: 100%;
+  height: clamp(13rem, 28vw, 18.75rem);
+  min-width: 0;
+}
+
+.workflow-header {
+  display: none;
+  grid-template-columns: minmax(14rem, 2fr) minmax(5rem, 0.65fr) minmax(5.5rem, 0.7fr) minmax(8rem, 1fr) minmax(5rem, 0.6fr) minmax(4.75rem, 0.55fr);
+  gap: clamp(0.5rem, 1vw, 0.75rem);
+  padding: 0 clamp(0.75rem, 1vw, 1rem) 0.5rem;
+  min-width: 54rem;
+}
+
+.workflow-row,
+.execution-row {
+  display: grid;
+  align-items: start;
+  gap: clamp(0.625rem, 1vw, 0.875rem);
+  min-width: 0;
+  width: 100%;
+  border-radius: clamp(0.875rem, 1.2vw, 1rem);
+  padding: clamp(0.875rem, 1.2vw, 1rem);
+}
+
+.responsive-table {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  padding-bottom: 0.15rem;
+}
+
+.responsive-table > * {
+  max-width: 100%;
+}
+
+.workflow-row {
+  grid-template-columns: 1fr;
+}
+
+.execution-row {
+  grid-template-columns: 1fr;
+}
+
+.execution-row.compact {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 64rem) {
+  .workflow-header {
+    display: grid;
+  }
+
+  .workflow-row {
+    grid-template-columns: minmax(14rem, 2fr) minmax(5rem, 0.65fr) minmax(5.5rem, 0.7fr) minmax(8rem, 1fr) minmax(5rem, 0.6fr) minmax(4.75rem, 0.55fr);
+    min-width: 54rem;
+    align-items: center;
+  }
+
+  .execution-row:not(.compact) {
+    grid-template-columns: minmax(14rem, 1.4fr) minmax(6rem, 0.55fr) minmax(8rem, 0.9fr) minmax(5rem, 0.5fr) minmax(4.75rem, 0.5fr);
+    min-width: 46rem;
+    align-items: center;
+  }
+}
+
+@media (min-width: 80rem) {
+  .app-shell {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .app-sidebar {
+    display: block;
+  }
+}
+
+@media (min-width: 96rem) {
+  .dashboard-split {
+    grid-template-columns: minmax(0, 1fr) minmax(min(100%, 22rem), 0.48fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .app-topbar-inner > * {
+    min-width: 0;
+  }
+
+  .app-topbar-inner button {
+    flex: 0 0 auto;
+  }
+}
+
 button,
 input {
   max-width: 100%;
@@ -32,11 +221,6 @@ main,
 aside,
 div {
   min-width: 0;
-}
-
-#root {
-  max-width: 100%;
-  overflow-x: hidden;
 }
 
 .recharts-wrapper {
