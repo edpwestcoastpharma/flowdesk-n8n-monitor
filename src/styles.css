@@ -12,6 +12,7 @@ html {
   scroll-behavior: smooth;
   max-width: 100%;
   overflow-x: hidden;
+  font-size: clamp(14px, 0.88vw + 0.45rem, 16px);
 }
 
 body {
@@ -40,6 +41,12 @@ div {
 
 .recharts-wrapper {
   max-width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  html {
+    font-size: 14px;
+  }
 }
 
 .gradient-text {
