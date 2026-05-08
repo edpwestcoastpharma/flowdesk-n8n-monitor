@@ -678,7 +678,10 @@ function groupClients(workflows) {
 }
 
 function executionStatus(execution) {
-  if (execution.status) return execution.status;
+  const rawStatus = String(execution.status || "").toLowerCase();
+  if (["error", "failed", "crashed", "canceled", "cancelled", "unknown"].includes(rawStatus)) return "failed";
+  if (["success", "completed", "complete", "finished"].includes(rawStatus)) return "success";
+  if (["running", "waiting", "new"].includes(rawStatus)) return "running";
   if (execution.error) return "failed";
   if (execution.finished === false) return "running";
   if (execution.stoppedAt) return "success";
